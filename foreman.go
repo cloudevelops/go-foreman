@@ -10,8 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-    "strings"
-    //"github.com/davecgh/go-spew/spew"
+	"strings"
+	//"github.com/davecgh/go-spew/spew"
 )
 
 type Foreman struct {
@@ -196,27 +196,36 @@ func (foreman *Foreman) DeleteHost(HostID string) error {
 }
 
 func (foreman *Foreman) SearchResource(Resource string, Query string) (map[string]interface{}, error) {
-    escapedQuery := strings.Replace(Query, " ", "+", -1)
-    data, err := foreman.Get(Resource+"?search="+escapedQuery+"&per_page=10000")
-    if err != nil {
-        fmt.Print("Error searching for resource")
-        fmt.Println(err)
-        return nil, err
-    }
-    resultSlice := data["results"].([]interface{})
-    if len(resultSlice) < 1 {
-        fmt.Print("Resource not found")
-        return nil, errors.New("Resource not found")
-    }
-    result, ok := data["results"].([]interface{})[0].(map[string]interface{})
-    if !ok {
-        fmt.Print("Resource doesnt contain any data")
-        return nil, errors.New("Resource doesnt contain any data")
-    }
-    if result == nil {
-        fmt.Print("Resource result is empty")
-        return nil, errors.New("Resource result is empty")
-    }
-    return result, err
+	escapedQuery := strings.Replace(Query, " ", "+", -1)
+	data, err := foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+	if err != nil {
+		fmt.Print("Error searching for resource")
+		fmt.Println(err)
+		return nil, err
+	}
+	resultSlice := data["results"].([]interface{})
+	if len(resultSlice) < 1 {
+		fmt.Print("Resource not found")
+		return nil, errors.New("Resource not found")
+	}
+	for _, resultItem := range resultSlice {
+		resultData := resultItem.(map[string]interface{})
+		//resultData := resultItem
+		if title, ok := resultData["title"]; ok {
+			if title == Query {
+				return resultData, err
+			}
+		}
+	}
+	for _, resultItem := range resultSlice {
+		resultData := resultItem.(map[string]interface{})
+		if title, ok := resultData["name"]; ok {
+			if title == Query {
+				return resultData, err
+			}
+		}
+	}
+	//spew.Dump(data)
+	fmt.Print("Resource not found")
+	return nil, errors.New("Resource not found")
 }
-
