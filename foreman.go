@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	//	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
-	//"github.com/davecgh/go-spew/spew"
+	"time"
 )
 
 type Foreman struct {
@@ -199,9 +200,27 @@ func (foreman *Foreman) SearchResource(Resource string, Query string) (map[strin
 	escapedQuery := strings.Replace(Query, " ", "+", -1)
 	data, err := foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
 	if err != nil {
-		fmt.Print("Error searching for resource")
+		fmt.Print("Error searching for resource, retry in 5s:")
 		fmt.Println(err)
-		return nil, err
+		time.Sleep(5 * time.Second)
+		data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+		if err != nil {
+			fmt.Print("Error searching for resource, retry in 15s:")
+			fmt.Println(err)
+			time.Sleep(15 * time.Second)
+			data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+			if err != nil {
+				fmt.Print("Error searching for resource, retry in 60s:")
+				fmt.Println(err)
+				time.Sleep(60 * time.Second)
+				data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+				if err != nil {
+					fmt.Print("Error searching for resource, failing")
+					fmt.Println(err)
+					return nil, err
+				}
+			}
+		}
 	}
 	resultSlice := data["results"].([]interface{})
 	if len(resultSlice) < 1 {
@@ -228,4 +247,92 @@ func (foreman *Foreman) SearchResource(Resource string, Query string) (map[strin
 	//spew.Dump(data)
 	fmt.Print("Resource not found")
 	return nil, errors.New("Resource not found")
+}
+
+func (foreman *Foreman) SearchResourceName(Resource string, Query string) (map[string]interface{}, error) {
+	escapedQuery := strings.Replace(Query, " ", "+", -1)
+	data, err := foreman.Get(Resource + "?search=name~" + escapedQuery + "&per_page=10000")
+	if err != nil {
+		fmt.Print("Error searching for resource, retry in 5s:")
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+		data, err = foreman.Get(Resource + "?search=name~" + escapedQuery + "&per_page=10000")
+		if err != nil {
+			fmt.Print("Error searching for resource, retry in 15s:")
+			fmt.Println(err)
+			time.Sleep(15 * time.Second)
+			data, err = foreman.Get(Resource + "?search=name~" + escapedQuery + "&per_page=10000")
+			if err != nil {
+				fmt.Print("Error searching for resource, retry in 60s:")
+				fmt.Println(err)
+				time.Sleep(60 * time.Second)
+				data, err = foreman.Get(Resource + "?search=name~" + escapedQuery + "&per_page=10000")
+				if err != nil {
+					fmt.Print("Error searching for resource, failing")
+					fmt.Println(err)
+					return nil, err
+				}
+			}
+		}
+	}
+	resultSlice := data["results"].([]interface{})
+	if len(resultSlice) < 1 {
+		fmt.Print("Resource not found")
+		return nil, errors.New("Resource not found")
+	}
+	for _, resultItem := range resultSlice {
+		resultData := resultItem.(map[string]interface{})
+		//resultData := resultItem
+		if title, ok := resultData["title"]; ok {
+			if title == Query {
+				return resultData, err
+			}
+		}
+	}
+	for _, resultItem := range resultSlice {
+		resultData := resultItem.(map[string]interface{})
+		if title, ok := resultData["name"]; ok {
+			if title == Query {
+				return resultData, err
+			}
+		}
+	}
+	//spew.Dump(data)
+	fmt.Print("Resource not found")
+	return nil, errors.New("Resource not found")
+}
+
+func (foreman *Foreman) SearchAnyResource(Resource string, Query string) (map[string]interface{}, error) {
+	escapedQuery := strings.Replace(Query, " ", "+", -1)
+	data, err := foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+	if err != nil {
+		fmt.Print("Error searching for resource, retry in 5s:")
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+		data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+		if err != nil {
+			fmt.Print("Error searching for resource, retry in 15s:")
+			fmt.Println(err)
+			time.Sleep(15 * time.Second)
+			data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+			if err != nil {
+				fmt.Print("Error searching for resource, retry in 60s:")
+				fmt.Println(err)
+				time.Sleep(60 * time.Second)
+				data, err = foreman.Get(Resource + "?search=" + escapedQuery + "&per_page=10000")
+				if err != nil {
+					fmt.Print("Error searching for resource, failing")
+					fmt.Println(err)
+					return nil, err
+				}
+			}
+		}
+	}
+	//spew.Dump(data)
+	resultSlice := data["results"].([]interface{})
+	if len(resultSlice) < 1 {
+		fmt.Print("Resource not found")
+		return nil, errors.New("Resource not found")
+	}
+	return data, nil
 }
