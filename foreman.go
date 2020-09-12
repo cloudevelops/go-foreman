@@ -87,6 +87,45 @@ func (foreman *Foreman) Post(endpoint string, jsonData []byte) (map[string]inter
 	return m, nil
 }
 
+func (foreman *Foreman) Put(endpoint string, jsonData []byte) (map[string]interface{}, error) {
+	var target string
+	var data interface{}
+	var req *http.Request
+
+	target = foreman.BaseURL + endpoint
+	//fmt.Println("POST form " + target)
+	req, err := http.NewRequest("PUT", target, bytes.NewBuffer(jsonData))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Length", strconv.Itoa(len(jsonData)))
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", foreman.auth)
+	r, err := foreman.client.Do(req)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("Error while posting")
+		fmt.Println(err)
+		return nil, err
+	}
+	if r.StatusCode < 200 || r.StatusCode > 299 {
+		return nil, errors.New("HTTP Error " + r.Status)
+	}
+
+	response, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error while reading body")
+		fmt.Println(err)
+		return nil, err
+	}
+	err = json.Unmarshal(response, &data)
+	if err != nil {
+		fmt.Println("Error while processing JSON")
+		fmt.Println(err)
+		return nil, err
+	}
+	m := data.(map[string]interface{})
+	return m, nil
+}
+
 func (foreman *Foreman) Get(endpoint string) (map[string]interface{}, error) {
 	var target string
 	var data interface{}
@@ -134,7 +173,9 @@ func (foreman *Foreman) Delete(endpoint string) (map[string]interface{}, error) 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", foreman.auth)
 	r, err := foreman.client.Do(req)
-	defer r.Body.Close()
+	if r != nil {
+		defer r.Body.Close()
+	}
 	if err != nil {
 		fmt.Println("Error while deleting")
 		fmt.Println(err)
